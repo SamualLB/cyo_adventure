@@ -1,0 +1,19 @@
+name: cyo_adventure
+version: 0.1.0
+
+authors:
+  - Samual Black <samuallb@hotmail.com>
+
+targets:
+  cyo_adventure:
+    main: src/cyo_adventure.cr
+
+dependencies:
+  ncurses:
+    github: SamualLB/ncurses
+  w3m_image_display:
+    github: SamualLB/w3mimagedisplay
+
+crystal: 0.27.0
+
+license: MIT
