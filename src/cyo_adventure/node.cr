@@ -3,9 +3,16 @@ class CYOAdventure
     include Interactable
 
     @content = [] of Content
-    @current_content = 0
+    @content_index = 0
 
-    @last_content_drawn : Int32 = 0
+    @choices = [] of Choice
+    getter ending : Ending? = nil
+
+    @pages = Array(Array(Content)).new
+    @page_index = 0
+
+    @choice : Choice?
+    @choice_index = 0
 
     def initialize(@book : CYOAdventure, text : String, dir : String)
       text.each_line do |line|
@@ -15,38 +22,61 @@ class CYOAdventure
           @content << Text.new(self, line)
         end
       end
+      @content.each { |ctnt| @choices << ctnt if ctnt.is_a?(Choice) }
+      @ending = @content[@content.size-1].as(Ending) if @content[@content.size-1].is_a?(Ending)
+      @choice = @choices[@choice_index]?
+      @choice.as(Choice).selected = true if @choice
+    end
+
+    def page : Array(Content)
+      @pages[@page_index]
     end
 
     def content : Content
-      @content[@current_content]
-    end
-
-    def next_content : Content?
-      @content[@current_content + 1]?
+      @content[@content_index]
     end
 
     # Go forward in book
     def advance_content
-      if @last_content_drawn == @content.size-1
-        @book.change_node(@content[@content.size-1].as(Choice).@destination)
+      if @page_index+1 >= @pages.size
+        # next node
+        @book.advance_node @choice.as(Choice).@destination if @choice
       else
-        @current_content = @last_content_drawn+1
+        @page_index += 1
       end
     end
 
     # Go back in book
     def retreat_content
-      if @current_content == 0
-        # previous node
+      if @page_index <= 0
+        @book.retreat_node
       else
-        @current_content -= 1
+        @page_index -= 1
       end
+    end
+
+    def choice_up
+      return unless @choice
+      return unless @choice_index-1 >= 0
+      @choice.as(Choice).selected = false
+      @choice = @choices[@choice_index -= 1]
+      @choice.as(Choice).selected = true
+    end
+
+    def choice_down
+      return unless @choice
+      return unless @choice_index+1 < @choices.size
+      @choice.as(Choice).selected = false
+      @choice = @choices[@choice_index += 1]
+      @choice.as(Choice).selected = true
     end
 
     def handle_key(key) : Bool
       case key
       when NCurses::Key::Right then advance_content
       when NCurses::Key::Left then retreat_content
+      when NCurses::Key::Up then choice_up
+      when NCurses::Key::Down then choice_down
       else return false 
       end
       true
@@ -56,68 +86,74 @@ class CYOAdventure
       false
     end
 
-    # Allow this to decide what to draw and store it for moving page...
-    def draw
-      current_index = @current_content
-      current_content = @content[current_index]
-      next_content : Content? = @content[current_index + 1]?
+    # Build from the end
+    def build_pages
+      @pages.clear
+      page = [] of Content
+      images_on_page = [] of Image
+      height = 0
+      max_height = NCurses.height
       previous_content : Content? = nil
-      content_to_draw = [] of Content
-      height = -1 # Account for gap at top
-      loop do
-        case current_content
-        when Text
-          if NCurses.height >= height + current_content.height + 1
-            height += current_content.height + 1
-            content_to_draw << current_content
-          else
-            break
-          end
-        when Image
-          if NCurses.height >= height + current_content.height + 1
-            height += current_content.height + 1
-            content_to_draw << current_content
-          else
-            break
-          end
+      @content.reverse.each do |cont|
+        height += 1 if !cont.is_a?(Ending) && previous_content.is_a?(Ending)
+        case cont
         when Ending
-          content_to_draw << current_content
-          break
+          page << cont
         when Choice
-          case previous_content
-          when Image # always add
-            height += 2 # account for gap above
-            content_to_draw << current_content
-          when Choice # always add
-            height += 1
-            content_to_draw << current_content
-          when Text # Add if there is enough space for all
-            if NCurses.height >= height + 2
-              height += 2
-              content_to_draw << current_content
-            else
-              break
+          page << cont
+          height += 1
+        when Image
+          if max_height < height + max_height * 0.25 + 1
+            unless images_on_page.empty?
+              add_on = (max_height - height) / images_on_page.size
+              images_on_page.each { |i| i.height = i.height + add_on }
             end
-          when Ending then raise "Choice should not come after ending"
+            @pages << page.reverse
+            page = [] of Content
+            images_on_page.clear
+            height = 0
           end
+          page << cont
+          images_on_page << cont.as(Image)
+          img_h = max_height * 0.25 + 1
+          height += img_h
+          cont.height = img_h
+        when Text
+          if max_height < height + content.height + 1
+            unless images_on_page.empty?
+              add_on = (max_height - height) / images_on_page.size
+              images_on_page.each { |i| i.height = i.height + add_on }
+            end
+            @pages << page.reverse
+            page = [] of Content
+            images_on_page.clear
+            height = 0
+          end
+          page << cont
+          height += cont.height + 1
         end
-        previous_content = current_content
-        current_index += 1
-        break unless @content[current_index]?
-        current_content = @content[current_index]
-        next_content = @content[current_index + 1]?
+        previous_content = cont
       end
-      draw_content(content_to_draw)
+      unless images_on_page.empty?
+        add_on = (max_height - height) / images_on_page.size
+        images_on_page.each { |i| i.height = i.height + add_on }
+      end
+      @pages << page.reverse
+      @pages.reverse!
+    end
+
+    def draw
+      build_pages if @pages.empty?
+      draw_content(page)
     end
 
     private def draw_content(ctnt : Array(Content))
-      @last_content_drawn = ctnt.size-1 + @current_content
       height = 0
       ctnt.each do |ctn|
         ctn.draw(height)
-        height += ctn.height + 1
+        height += ctn.height
+        height += 1 if ctn.new_line
       end
-      NCurses.print "Node: #{@content.size}, #{@current_content}, #{@last_content_drawn}", NCurses.height-1, 0
     end
   end
 end

@@ -18,7 +18,20 @@ class CYOAdventure
     end
 
     def draw(offset = 0, height = 0)
-      NCurses.print "C:#{@text} (#{@destination})", offset, 0
+      return if @text.empty?
+      NCurses.move(offset, 0)
+      NCurses.print "-> " if @selected
+      NCurses.attr_on(NCurses::Attribute::Standout) if @selected
+      NCurses.print "#{@text}"
+      NCurses.attr_off(NCurses::Attribute::Standout) if @selected
+      NCurses.print " <-" if @selected
+    end
+
+    def new_line
+      false
+    end
+
+    def selected=(@selected)
     end
   end
 end

@@ -9,6 +9,8 @@ class CYOAdventure
 
     @cache_size : {Int32, Int32}? = nil
 
+    @height = 3
+
     def initialize(@node : Node, hash_line : String, dir : String)
       file_name = hash_line.split("#i", remove_empty: true)[0]
       raise "#{dir} directory does not exist" unless File.directory?(dir)
@@ -31,12 +33,15 @@ class CYOAdventure
     end
 
     def height : Int32
-      3
+      @height
+    end
+
+    def height=(new_h)
+      @height = new_h.to_i32
     end
 
     # Store in a cache to be draw after the NCurses refresh
-    def draw(offset : Int32 = 0, height : Int32 = 3)
-      NCurses.print "Image#{"_" * ((height * NCurses.width) - 5)}", offset, 0
+    def draw(offset : Int32 = 0, height = @height)
       @@draw_cache << {self, offset, height}
     end
 
@@ -46,6 +51,10 @@ class CYOAdventure
         tup[0].@w3m_image.draw(0, tup[1], W3MImageDisplay.width, tup[2]).sync.sync_communication
       end
       @@draw_cache.clear
+    end
+
+    def new_line
+      true
     end
   end
 end

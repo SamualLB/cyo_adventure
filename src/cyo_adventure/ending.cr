@@ -5,11 +5,14 @@ class CYOAdventure
     end
 
     def height : Int32
-      1
+      0
     end
 
     def draw(offset = 0, height = 0)
-      NCurses.print "test", offset, 0
+    end
+
+    def new_line
+      false
     end
   end
 end

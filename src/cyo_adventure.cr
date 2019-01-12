@@ -5,11 +5,14 @@ require "./cyo_adventure/*"
 class CYOAdventure
   include Interactable
 
+  VERSION = "0.2.0"
+
   BOOK_FILE_NAME = "book.txt"
 
   @nodes = {} of Int32 => Node
 
   @current_node = 0
+  @node_cache = [] of Int32
 
   def initialize(path : String)
     path += BOOK_FILE_NAME if File.directory?(path)
@@ -23,9 +26,15 @@ class CYOAdventure
     @nodes[@current_node]
   end
 
-  protected def change_node(new : Int32)
+  protected def advance_node(new : Int32)
     raise "Not a node" unless @nodes[new]?
+    @node_cache << @current_node
     @current_node = new
+  end
+
+  protected def retreat_node
+    old = @node_cache.pop?
+    @current_node = old if old
   end
 
   def handle_key(key) : Bool
@@ -38,12 +47,13 @@ class CYOAdventure
   end
 
   def handle_mouse(mouse) : Bool
-    false
+    node.handle_mouse(mouse)
   end
 
   def loop
     loop do
       NCurses.clear
+      NCurses.print "#{@current_node}", NCurses.height-1, NCurses.width-3
       node.draw
       NCurses.refresh
       Image.draw_cache

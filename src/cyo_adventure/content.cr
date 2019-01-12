@@ -37,5 +37,7 @@ class CYOAdventure
     abstract def height : Int32
 
     abstract def draw(offset : Int32, height : Int32)
+
+    abstract def new_line : Bool
   end
 end

@@ -15,5 +15,9 @@ class CYOAdventure
     def draw(offset : Int32 = 0, height = 0)
       NCurses.print @text, offset, 0
     end
+
+    def new_line
+      true
+    end
   end
 end
