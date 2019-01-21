@@ -109,7 +109,7 @@ class CYOAdventure
               images_on_page.each { |i| i.height = i.height + add_on }
             end
             @pages << page.reverse
-            page = [] of Content
+            page.clear
             images_on_page.clear
             height = 0
           end
@@ -125,7 +125,7 @@ class CYOAdventure
               images_on_page.each { |i| i.height = i.height + add_on }
             end
             @pages << page.reverse
-            page = [] of Content
+            page.clear
             images_on_page.clear
             height = 0
           end
