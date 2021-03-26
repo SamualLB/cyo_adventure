@@ -16,7 +16,7 @@ class CYOAdventure
       NCurses.print @text, offset, 0
     end
 
-    def new_line
+    def new_line : Bool
       true
     end
   end

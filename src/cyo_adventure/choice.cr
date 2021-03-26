@@ -27,7 +27,7 @@ class CYOAdventure
       NCurses.print " <-" if @selected
     end
 
-    def new_line
+    def new_line : Bool
       false
     end
 

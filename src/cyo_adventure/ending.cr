@@ -11,7 +11,7 @@ class CYOAdventure
     def draw(offset = 0, height = 0)
     end
 
-    def new_line
+    def new_line : Bool
       false
     end
   end

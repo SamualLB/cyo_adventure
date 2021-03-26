@@ -53,7 +53,7 @@ class CYOAdventure
       @@draw_cache.clear
     end
 
-    def new_line
+    def new_line : Bool
       true
     end
   end

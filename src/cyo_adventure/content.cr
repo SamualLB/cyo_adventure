@@ -4,7 +4,6 @@ class CYOAdventure
     getter! node : Node
 
     def next : Content?
-      
     end
 
     # Dispatch to correct class
