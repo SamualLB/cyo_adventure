@@ -7,7 +7,7 @@ class CYOAdventure
 
   VERSION = "0.2.0"
 
-  BOOK_FILE_NAME = "book.txt"
+  BOOK_FILE_NAME = "book.cyo"
 
   @nodes = {} of Int32 => Node
 
@@ -15,7 +15,7 @@ class CYOAdventure
   @node_cache = [] of Int32
 
   def initialize(path : String)
-    path += BOOK_FILE_NAME if File.directory?(path)
+    path = Path.new(path, BOOK_FILE_NAME) if File.directory?(path)
     raise "Book #{path} does not exist" unless File.file?(path)
     File.read(path).split(/(?<=[^\\\\])#n|^#n/, remove_empty: true) do |node|
       @nodes[node.each_line.next.as(String).to_i32] = Node.new(self, node.split("\n", 2)[1], File.dirname(path))
@@ -66,12 +66,13 @@ class CYOAdventure
     end
   end
 
-  book = self.new("book/book.txt")
+  book = self.new("book")
 
   NCurses.start
   NCurses.no_echo
   NCurses.cbreak
   NCurses.keypad true
+  NCurses.set_cursor(NCurses::Cursor::Invisible)
   NCurses.mouse_mask(NCurses::Mouse::AllEvents | NCurses::Mouse::Position)
 
   book.loop
